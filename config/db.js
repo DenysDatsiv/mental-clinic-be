@@ -1,27 +1,27 @@
 const mongoose = require('mongoose');
 
-let isConnected = false; // Prevent multiple connections in serverless
+let cachedConnection = null; // Cache the database connection
 
 const connectDB = async () => {
-    if (isConnected) {
+    if (cachedConnection) {
         console.log("✅ Using existing MongoDB connection.");
-        return;
+        return cachedConnection;
     }
 
     if (!process.env.MONGODB_URI) {
         console.error("❌ ERROR: Missing MONGODB_URI! Set it in Vercel.");
-        process.exit(1);
+        return;
     }
 
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI); // No extra options needed in Mongoose v6+
-        isConnected = conn.connections[0].readyState === 1;
+        const conn = await mongoose.connect(process.env.MONGODB_URI);
+        cachedConnection = conn; // Store connection in cache
         console.log(`✅ MongoDB connected: ${conn.connection.host}`);
+        return conn;
     } catch (error) {
         console.error(`❌ MongoDB connection error: ${error.message}`);
-        process.exit(1);
+        throw new Error("Database connection failed");
     }
 };
-console.log("🔍 MONGODB_URI:", process.env.MONGODB_URI);
 
 module.exports = connectDB;
