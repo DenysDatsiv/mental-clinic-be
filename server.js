@@ -1,8 +1,8 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const connectDB = require('../config/db'); // Correct path
-const testRoutes = require('../routes/testRoutes');
+const connectDB = require('./config/db'); // Correct path
+const testRoutes = require('./routes/testRoutes');
 const serverless = require('serverless-http'); // Required for Vercel
 
 dotenv.config();
