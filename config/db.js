@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-let cachedConnection = null; // Cache the database connection
+let cachedConnection = null;
 
 const connectDB = async () => {
     if (cachedConnection) {
@@ -9,13 +9,13 @@ const connectDB = async () => {
     }
 
     if (!process.env.MONGODB_URI) {
-        console.error("❌ ERROR: Missing MONGODB_URI! Set it in Vercel.");
+        console.error("❌ ERROR: Missing MONGODB_URI! Set it in Render.");
         return;
     }
 
     try {
         const conn = await mongoose.connect(process.env.MONGODB_URI);
-        cachedConnection = conn; // Store connection in cache
+        cachedConnection = conn;
         console.log(`✅ MongoDB connected: ${conn.connection.host}`);
         return conn;
     } catch (error) {
