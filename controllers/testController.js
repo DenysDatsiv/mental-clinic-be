@@ -2,10 +2,8 @@ const mongoose = require('mongoose');
 const Test = require('../models/Test');
 const crypto = require('crypto');
 
-// Helper function to generate a random name
 const generateRandomName = () => crypto.randomBytes(8).toString('hex');
 
-// Create a new Test
 exports.createTest = async (req, res) => {
     try {
         const testData = req.body;
@@ -32,20 +30,17 @@ exports.getAllTests = async (req, res) => {
         const { searchKeyword, type } = req.query;
         let filter = {};
 
-        // Apply search filter if searchKeyword is provided
         if (searchKeyword) {
             filter.$or = [
-                { name: { $regex: new RegExp(searchKeyword, 'i') } }, // Case-insensitive search
-                { description: { $regex: new RegExp(searchKeyword, 'i') } } // Case-insensitive search
+                { name: { $regex: new RegExp(searchKeyword, 'i') } },
+                { description: { $regex: new RegExp(searchKeyword, 'i') } }
             ];
         }
 
-        // Apply type filter if provided
         if (type) {
             filter.type = type;
         }
 
-        // Query MongoDB and select only required fields, now including 'description'
         const tests = await Test.find(filter).select('_id name description sesc type specialTest duration');
 
         res.status(200).json(tests);
@@ -56,7 +51,6 @@ exports.getAllTests = async (req, res) => {
 };
 
 
-// Get a single Test by ID
 exports.getTestById = async (req, res) => {
     try {
         const test = await Test.findById(req.params.id);
@@ -67,7 +61,6 @@ exports.getTestById = async (req, res) => {
     }
 };
 
-// Update a Test by ID
 exports.updateTest = async (req, res) => {
     try {
         const updatedData = req.body;
@@ -87,7 +80,6 @@ exports.updateTest = async (req, res) => {
     }
 };
 
-// Delete a Test by ID
 exports.deleteTest = async (req, res) => {
     try {
         const deletedTest = await Test.findByIdAndDelete(req.params.id);
