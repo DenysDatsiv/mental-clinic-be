@@ -11,6 +11,7 @@ const interpretationSchema = new mongoose.Schema({
     range: [{ type: Number, required: false }],
     result: { type: String, required: false },
     name: { type: String, required: false },
+    type:{ type: String, required: false },
     questionIndex: [{ type: Number, required: false }],
 });
 
