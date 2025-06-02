@@ -15,6 +15,13 @@ const interpretationSchema = new mongoose.Schema({
     questionIndex: [{ type: Number, required: false }],
 });
 
+const factor = new mongoose.Schema({
+    factor: [{ type: Number, required: false }],
+    name: { type: String, required: false },
+    questions:[{ type: Number, required: false }],
+    interpretation:  { type: String, required: false },
+});
+
 const testSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true },
@@ -26,7 +33,8 @@ const testSchema = new mongoose.Schema({
     pdfLink: { type: String, required: true },
     questions: [questionSchema],
     commonMessage: { type: String, required: true },
-    resultInterpretation: [interpretationSchema]
+    resultInterpretation: [interpretationSchema],
+    factor:[factor]
 });
 
 module.exports = mongoose.model('Test', testSchema);
