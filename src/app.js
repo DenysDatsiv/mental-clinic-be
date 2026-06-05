@@ -1,10 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const authRoutes    = require('./routes/auth.routes');
-const testRoutes    = require('./routes/test.routes');
-const articleRoutes = require('./routes/article.routes');
-const errorHandler  = require('./middleware/error.middleware');
+const authRoutes      = require('./routes/auth.routes');
+const testRoutes      = require('./routes/test.routes');
+const articleRoutes   = require('./routes/article.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
+const errorHandler    = require('./middleware/error.middleware');
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '')
     .split(',')
@@ -30,9 +31,10 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 
-app.use('/api/auth',     authRoutes);
-app.use('/api/tests',    testRoutes);
-app.use('/api/articles', articleRoutes);
+app.use('/api/auth',      authRoutes);
+app.use('/api/tests',     testRoutes);
+app.use('/api/articles',  articleRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.use(errorHandler);
 
