@@ -16,6 +16,9 @@ router.post('/logout', (req, res)       => authController.logout(req, res));
 // Returns current user from cookie (used on page refresh)
 router.get('/me', authenticate, (req, res, next) => authController.me(req, res, next));
 
+// Change own password
+router.post('/change-password', authenticate, (req, res, next) => authController.changePassword(req, res, next));
+
 // Admin creates users
 router.post('/users', authenticate, requireAdmin, (req, res, next) => authController.createUser(req, res, next));
 

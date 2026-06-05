@@ -5,11 +5,25 @@ const makeError = (msg, code) => Object.assign(new Error(msg), { statusCode: cod
 const buildClient = () => {
     const raw = process.env.GA4_CREDENTIALS;
     if (!raw) return new BetaAnalyticsDataClient();
+
+    let creds;
     try {
-        return new BetaAnalyticsDataClient({ credentials: JSON.parse(raw) });
+        creds = JSON.parse(raw);
     } catch {
-        throw new Error('GA4_CREDENTIALS is not valid JSON');
+        // Render sometimes double-escapes the JSON — try to fix it
+        try {
+            creds = JSON.parse(raw.replace(/\\n/g, '\n'));
+        } catch {
+            throw Object.assign(new Error('GA4_CREDENTIALS не є валідним JSON'), { statusCode: 503 });
+        }
     }
+
+    // Ensure private_key newlines are real newlines, not literal \n strings
+    if (creds.private_key) {
+        creds.private_key = creds.private_key.replace(/\\n/g, '\n');
+    }
+
+    return new BetaAnalyticsDataClient({ credentials: creds });
 };
 
 class AnalyticsService {
