@@ -16,7 +16,7 @@ class AuthService {
         if (!user || !(await user.comparePassword(password))) {
             throw makeError('Invalid email or password', 401);
         }
-        return { token: signToken(user), user };
+        return { token: signToken(user), user: user.toJSON() };
     }
 
     async createUser({ name, email, password, role = 'user' }) {
