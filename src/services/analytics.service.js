@@ -92,13 +92,43 @@ class AnalyticsService {
         }));
     }
 
+    async getTrafficSources() {
+        const [res] = await this.client.runReport({
+            property: this.propertyId,
+            dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+            dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+            metrics: [{ name: 'sessions' }],
+            orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        });
+        return (res.rows || []).map(row => ({
+            source:   row.dimensionValues[0].value,
+            sessions: parseInt(row.metricValues[0].value),
+        }));
+    }
+
+    async getDevices() {
+        const [res] = await this.client.runReport({
+            property: this.propertyId,
+            dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+            dimensions: [{ name: 'deviceCategory' }],
+            metrics: [{ name: 'sessions' }],
+            orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+        });
+        return (res.rows || []).map(row => ({
+            device:   row.dimensionValues[0].value,
+            sessions: parseInt(row.metricValues[0].value),
+        }));
+    }
+
     async getAll() {
-        const [summary, daily, topPages] = await Promise.all([
+        const [summary, daily, topPages, sources, devices] = await Promise.all([
             this.getSummary(),
             this.getDailyStats(),
             this.getTopPages(),
+            this.getTrafficSources(),
+            this.getDevices(),
         ]);
-        return { summary, daily, topPages };
+        return { summary, daily, topPages, sources, devices };
     }
 }
 
