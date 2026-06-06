@@ -6,6 +6,7 @@ const testRoutes      = require('./routes/test.routes');
 const articleRoutes   = require('./routes/article.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const teamRoutes      = require('./routes/team.routes');
+const reviewRoutes    = require('./routes/review.routes');
 const errorHandler    = require('./middleware/error.middleware');
 
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGIN || '')
@@ -37,6 +38,7 @@ app.use('/api/tests',     testRoutes);
 app.use('/api/articles',  articleRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/team',      teamRoutes);
+app.use('/api/reviews',   reviewRoutes);
 
 app.use(errorHandler);
 
