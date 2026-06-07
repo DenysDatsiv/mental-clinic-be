@@ -6,17 +6,39 @@ const COOKIE_OPTIONS = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
 };
 
 class AuthController {
-    async login(req, res, next) {
+    async loginStep1(req, res, next) {
         try {
-            const { email, password } = req.body;
-            const { token, user } = await authService.login(email, password);
+            const { identifier, password } = req.body;
+            const result = await authService.loginStep1(identifier, password);
+            res.status(200).json(result);
+        } catch (err) { next(err); }
+    }
+
+    async verifyOtp(req, res, next) {
+        try {
+            const { userId, otp } = req.body;
+            const { token, user } = await authService.verifyOtp(userId, otp);
             res.cookie('token', token, COOKIE_OPTIONS);
             res.status(200).json({ user });
+        } catch (err) { next(err); }
+    }
+
+    async forgotPassword(req, res, next) {
+        try {
+            await authService.forgotPassword(req.body.identifier);
+            res.status(200).json({ message: 'Якщо акаунт існує, посилання надіслано' });
+        } catch (err) { next(err); }
+    }
+
+    async resetPassword(req, res, next) {
+        try {
+            await authService.resetPassword(req.body.token, req.body.newPassword);
+            res.status(200).json({ message: 'Пароль успішно змінено' });
         } catch (err) { next(err); }
     }
 

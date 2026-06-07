@@ -3,10 +3,15 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
     {
-        name:     { type: String, required: true },
-        email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
-        password: { type: String, required: true },
-        role:     { type: String, enum: ['admin', 'user'], default: 'user' },
+        name:              { type: String, required: true },
+        email:             { type: String, required: true, unique: true, lowercase: true, trim: true },
+        phone:             { type: String, sparse: true, unique: true, trim: true },
+        password:          { type: String, required: true },
+        role:              { type: String, enum: ['admin', 'user'], default: 'user' },
+        otpCode:           { type: String },
+        otpExpires:        { type: Date },
+        resetToken:        { type: String },
+        resetTokenExpires: { type: Date },
     },
     { timestamps: true }
 );
@@ -21,7 +26,14 @@ userSchema.methods.comparePassword = function (plain) {
 };
 
 userSchema.set('toJSON', {
-    transform: (_, obj) => { delete obj.password; return obj; },
+    transform: (_, obj) => {
+        delete obj.password;
+        delete obj.otpCode;
+        delete obj.otpExpires;
+        delete obj.resetToken;
+        delete obj.resetTokenExpires;
+        return obj;
+    },
 });
 
 module.exports = mongoose.model('User', userSchema);
