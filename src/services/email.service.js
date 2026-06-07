@@ -1,6 +1,5 @@
 const nodemailer = require('nodemailer');
 
-const LOGO_URL    = process.env.LOGO_URL || 'https://doctor-skripnik.com.ua/logo.png';
 const BRAND_DARK  = '#003168';
 const BRAND_BLUE  = '#5f75d6';
 
@@ -17,9 +16,6 @@ function header(title) {
     return `
       <!-- header -->
       <div style="background:${BRAND_DARK};padding:32px 40px;text-align:center;border-radius:12px 12px 0 0">
-        <img src="${LOGO_URL}" alt="Логотип"
-             style="width:72px;height:72px;border-radius:50%;border:3px solid ${BRAND_BLUE};
-                    object-fit:cover;background:#fff;margin-bottom:14px;display:block;margin-left:auto;margin-right:auto" />
         <div style="color:#fff;font-size:15px;font-weight:700;line-height:1.3;margin-bottom:2px">
           Онлайн центр ментального здоров'я
         </div>
