@@ -12,6 +12,7 @@ const teamSchema = new Schema({
     education:        [String],
     isActive:         { type: Boolean, default: true },
     order:            { type: Number, default: 0 },
+    userId:           { type: Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 module.exports = model('Team', teamSchema);

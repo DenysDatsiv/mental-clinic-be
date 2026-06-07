@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
+const teamRepository = require('../repositories/team.repository');
 const emailService   = require('./email.service');
 const { randomBytes } = crypto;
 
@@ -61,14 +62,48 @@ class AuthService {
         user.inviteTokenExpires  = undefined;
         await user.save();
 
+        // Auto-create team profile for doctors
+        if (user.role === 'doctor') {
+            const existing = await teamRepository.findByUserId(user._id);
+            if (!existing) {
+                await teamRepository.create({
+                    name:   `${name}${lastName ? ' ' + lastName : ''}`,
+                    role:   'Лікар',
+                    email:  user.email,
+                    phone:  phone || '',
+                    userId: user._id,
+                });
+            } else {
+                await teamRepository.update(existing._id, {
+                    name:  `${name}${lastName ? ' ' + lastName : ''}`,
+                    phone: phone || existing.phone,
+                });
+            }
+        }
+
         return user.toJSON();
     }
 
     async updateUserRole(userId, role) {
         const user = await userRepository.findById(userId);
         if (!user) throw makeError('Користувача не знайдено', 404);
+        const prevRole = user.role;
         user.role = role;
         await user.save();
+
+        // Auto-create team profile when promoting to doctor
+        if (role === 'doctor' && prevRole !== 'doctor') {
+            const existing = await teamRepository.findByUserId(userId);
+            if (!existing) {
+                await teamRepository.create({
+                    name:   `${user.name}${user.lastName ? ' ' + user.lastName : ''}`,
+                    role:   'Лікар',
+                    email:  user.email,
+                    phone:  user.phone || '',
+                    userId: user._id,
+                });
+            }
+        }
         return user.toJSON();
     }
 

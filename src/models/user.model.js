@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
         email:                { type: String, required: true, unique: true, lowercase: true, trim: true },
         phone:                { type: String, sparse: true, unique: true, trim: true },
         password:             { type: String, required: true },
-        role:                 { type: String, enum: ['admin', 'user'], default: 'user' },
+        role:                 { type: String, enum: ['admin', 'user', 'doctor'], default: 'user' },
         status:               { type: String, enum: ['pending', 'active'], default: 'active' },
         inviteToken:          { type: String },
         inviteTokenExpires:   { type: Date },
