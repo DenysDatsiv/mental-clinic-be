@@ -122,4 +122,51 @@ async function sendResetEmail(to, resetUrl) {
     });
 }
 
-module.exports = { sendOtpEmail, sendResetEmail };
+async function sendInviteEmail(to, inviteUrl, role) {
+    const roleLabel = role === 'admin' ? 'Адміністратор' : 'Користувач';
+    const html = wrapper(`
+      ${header('Запрошення до системи')}
+      <div style="background:#fff;padding:36px 40px">
+        <p style="margin:0 0 8px;color:#374151;font-size:15px;line-height:1.6">
+          Вас запрошено до панелі адміністратора
+          <strong style="color:${BRAND_DARK}">Онлайн центру ментального здоров'я Євгена Скрипника</strong>.
+        </p>
+        <p style="margin:0 0 24px;color:#6b7280;font-size:13px">
+          Ваша роль: <strong>${roleLabel}</strong>
+        </p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${inviteUrl}"
+             style="display:inline-block;padding:16px 36px;background:${BRAND_BLUE};
+                    color:#fff;text-decoration:none;border-radius:10px;font-weight:700;
+                    font-size:16px;letter-spacing:0.3px;
+                    box-shadow:0 4px 14px rgba(95,117,214,0.4)">
+            ✉️ Прийняти запрошення
+          </a>
+        </div>
+        <p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.6">
+          Після переходу за посиланням вам потрібно буде:
+        </p>
+        <ul style="margin:0 0 24px;padding-left:20px;color:#374151;font-size:14px;line-height:2">
+          <li>Вказати імʼя та прізвище</li>
+          <li>Додати номер телефону</li>
+          <li>Встановити пароль</li>
+        </ul>
+        <div style="background:#fff8ed;border-left:4px solid #f59e0b;border-radius:6px;padding:12px 16px">
+          <p style="margin:0;color:#92400e;font-size:13px;line-height:1.5">
+            ⏱ Запрошення дійсне <strong>7 днів</strong>.
+            Якщо ви не очікували цього листа — проігноруйте його.
+          </p>
+        </div>
+      </div>
+      ${footer()}
+    `);
+
+    await createTransport().sendMail({
+        from:    `"Ментальна клініка" <${process.env.SMTP_USER}>`,
+        to,
+        subject: 'Запрошення до панелі адміністратора',
+        html,
+    });
+}
+
+module.exports = { sendOtpEmail, sendResetEmail, sendInviteEmail };

@@ -3,15 +3,19 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
     {
-        name:              { type: String, required: true },
-        email:             { type: String, required: true, unique: true, lowercase: true, trim: true },
-        phone:             { type: String, sparse: true, unique: true, trim: true },
-        password:          { type: String, required: true },
-        role:              { type: String, enum: ['admin', 'user'], default: 'user' },
-        otpCode:           { type: String },
-        otpExpires:        { type: Date },
-        resetToken:        { type: String },
-        resetTokenExpires: { type: Date },
+        name:                 { type: String, required: true },
+        lastName:             { type: String },
+        email:                { type: String, required: true, unique: true, lowercase: true, trim: true },
+        phone:                { type: String, sparse: true, unique: true, trim: true },
+        password:             { type: String, required: true },
+        role:                 { type: String, enum: ['admin', 'user'], default: 'user' },
+        status:               { type: String, enum: ['pending', 'active'], default: 'active' },
+        inviteToken:          { type: String },
+        inviteTokenExpires:   { type: Date },
+        otpCode:              { type: String },
+        otpExpires:           { type: Date },
+        resetToken:           { type: String },
+        resetTokenExpires:    { type: Date },
     },
     { timestamps: true }
 );
@@ -32,6 +36,8 @@ userSchema.set('toJSON', {
         delete obj.otpExpires;
         delete obj.resetToken;
         delete obj.resetTokenExpires;
+        delete obj.inviteToken;
+        delete obj.inviteTokenExpires;
         return obj;
     },
 });

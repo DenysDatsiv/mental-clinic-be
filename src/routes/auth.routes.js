@@ -12,6 +12,9 @@ router.post('/reset-password',  (req, res, next) => authController.resetPassword
 router.post('/logout',          (req, res)       => authController.logout(req, res));
 router.get ('/me',              authenticate,    (req, res, next) => authController.me(req, res, next));
 router.post('/change-password', authenticate,    (req, res, next) => authController.changePassword(req, res, next));
-router.post('/users',           authenticate, requireAdmin, (req, res, next) => authController.createUser(req, res, next));
+router.get ('/users',           authenticate, requireAdmin, (req, res, next) => authController.getUsers(req, res, next));
+router.post('/users/invite',    authenticate, requireAdmin, (req, res, next) => authController.inviteUser(req, res, next));
+router.post('/users/accept',    (req, res, next) => authController.acceptInvite(req, res, next));
+router.patch('/users/:id/role', authenticate, requireAdmin, (req, res, next) => authController.updateUserRole(req, res, next));
 
 module.exports = router;

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt    = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
 const emailService   = require('./email.service');
+const { randomBytes } = crypto;
 
 const makeError = (msg, code) => Object.assign(new Error(msg), { statusCode: code });
 
@@ -14,11 +15,71 @@ const signToken = (user) =>
     );
 
 class AuthService {
+    async getUsers() {
+        return userRepository.findAll();
+    }
+
+    async inviteUser(email, role = 'user') {
+        const existing = await userRepository.findByEmail(email);
+        if (existing) throw makeError('Email вже використовується', 409);
+
+        const inviteToken = randomBytes(32).toString('hex');
+        const tempPassword = randomBytes(16).toString('hex');
+
+        await userRepository.create({
+            name:                email.split('@')[0],
+            email,
+            password:            tempPassword,
+            role,
+            status:              'pending',
+            inviteToken:         crypto.createHash('sha256').update(inviteToken).digest('hex'),
+            inviteTokenExpires:  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
+
+        const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
+        await emailService.sendInviteEmail(email, inviteUrl, role);
+    }
+
+    async acceptInvite(token, { name, lastName, phone, password }) {
+        const hashed = crypto.createHash('sha256').update(token).digest('hex');
+        const user = await userRepository.findOne({
+            inviteToken:         hashed,
+            inviteTokenExpires:  { $gt: new Date() },
+            status:              'pending',
+        });
+        if (!user) throw makeError('Запрошення недійсне або протерміноване', 400);
+        if (!name || !password || password.length < 6) {
+            throw makeError('Заповніть обовʼязкові поля (мін. 6 символів для паролю)', 400);
+        }
+
+        user.name                = name;
+        user.lastName            = lastName || undefined;
+        user.phone               = phone    || undefined;
+        user.password            = password;
+        user.status              = 'active';
+        user.inviteToken         = undefined;
+        user.inviteTokenExpires  = undefined;
+        await user.save();
+
+        return user.toJSON();
+    }
+
+    async updateUserRole(userId, role) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw makeError('Користувача не знайдено', 404);
+        user.role = role;
+        await user.save();
+        return user.toJSON();
+    }
+
     // Step 1: validate credentials, generate + email OTP
     async loginStep1(identifier, password) {
         const user = await userRepository.findByEmailOrPhone(identifier);
         if (!user || !(await user.comparePassword(password))) {
             throw makeError('Невірний логін або пароль', 401);
+        }
+        if (user.status === 'pending') {
+            throw makeError('Спочатку прийміть запрошення через посилання у листі', 403);
         }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
