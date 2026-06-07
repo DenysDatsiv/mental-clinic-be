@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 
-const LOGO_URL    = `${process.env.FRONTEND_URL}/logo.png`;
+const LOGO_URL    = process.env.LOGO_URL || 'https://doctor-skripnik.com.ua/logo.png';
 const BRAND_DARK  = '#003168';
 const BRAND_BLUE  = '#5f75d6';
 
