@@ -26,6 +26,61 @@ const buildClient = () => {
     return new BetaAnalyticsDataClient({ credentials: creds });
 };
 
+// Map path patterns to friendly Ukrainian page names.
+// If the GA4 pageTitle is unique (not just the site name), we keep it.
+// Otherwise we derive a meaningful label from the URL structure.
+const SITE_NAME_RE = /онлайн центр|mental|ментального здоров|євгена скрипника/i;
+
+const PATH_RULES = [
+    { re: /^\/$/, label: 'Головна сторінка' },
+    { re: /^\/test\/list/,           label: 'Список тестів' },
+    { re: /^\/test\/detail\//,       label: 'Тест · деталі' },
+    { re: /^\/test\//,               label: 'Тест' },
+    { re: /^\/article\/list/,        label: 'Список статей' },
+    { re: /^\/article\//,            label: 'Стаття' },
+    { re: /^\/articles/,             label: 'Статті' },
+    { re: /^\/team/,                 label: 'Команда' },
+    { re: /^\/specialists/,          label: 'Спеціалісти' },
+    { re: /^\/doctors/,              label: 'Лікарі' },
+    { re: /^\/about/,                label: 'Про нас' },
+    { re: /^\/contact/,              label: 'Контакти' },
+    { re: /^\/reviews/,              label: 'Відгуки' },
+    { re: /^\/blog/,                 label: 'Блог' },
+    { re: /^\/services/,             label: 'Послуги' },
+    { re: /^\/faq/,                  label: 'Питання та відповіді' },
+    { re: /^\/login/,                label: 'Вхід' },
+    { re: /^\/register/,             label: 'Реєстрація' },
+    { re: /^\/profile/,              label: 'Профіль' },
+    { re: /^\/search/,               label: 'Пошук' },
+    { re: /^\/privacy/,              label: 'Конфіденційність' },
+    { re: /^\/terms/,                label: 'Умови використання' },
+];
+
+function friendlyTitle(path, gaTitle) {
+    // If GA4 already returned a unique, meaningful title — use it
+    if (gaTitle && gaTitle.trim() && !SITE_NAME_RE.test(gaTitle)) {
+        // Truncate very long titles
+        return gaTitle.length > 60 ? gaTitle.slice(0, 57) + '…' : gaTitle;
+    }
+
+    // Otherwise derive label from the path
+    for (const rule of PATH_RULES) {
+        if (rule.re.test(path)) return rule.label;
+    }
+
+    // Generic fallback: clean up the path into a readable label
+    const segments = path.replace(/\/$/, '').split('/').filter(Boolean);
+    if (!segments.length) return 'Головна сторінка';
+
+    // If last segment looks like a MongoDB ObjectId or UUID, use the previous one
+    const last = segments[segments.length - 1];
+    const isId = /^[a-f\d]{20,}$/i.test(last) || /^[\w-]{30,}$/.test(last);
+    const label = isId && segments.length > 1 ? segments[segments.length - 2] : last;
+
+    // Capitalise and replace hyphens/underscores with spaces
+    return label.replace(/[-_]/g, ' ').replace(/^\w/, c => c.toUpperCase());
+}
+
 class AnalyticsService {
     get propertyId() {
         if (!process.env.GA4_PROPERTY_ID) throw makeError('GA4_PROPERTY_ID not set', 503);
@@ -83,11 +138,11 @@ class AnalyticsService {
             dimensions: [{ name: 'pagePath' }, { name: 'pageTitle' }],
             metrics: [{ name: 'screenPageViews' }],
             orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-            limit: 7,
+            limit: 10,
         });
         return (res.rows || []).map(row => ({
             path:   row.dimensionValues[0].value,
-            title:  row.dimensionValues[1].value,
+            title:  friendlyTitle(row.dimensionValues[0].value, row.dimensionValues[1].value),
             views:  parseInt(row.metricValues[0].value),
         }));
     }

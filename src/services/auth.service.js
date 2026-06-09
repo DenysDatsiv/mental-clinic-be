@@ -120,6 +120,7 @@ class AuthService {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.otpCode    = await bcrypt.hash(otp, 6);
         user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+        user.otpSentAt  = new Date();
         await user.save();
 
         await emailService.sendOtpEmail(user.email, otp);
@@ -148,6 +149,32 @@ class AuthService {
         await user.save();
 
         return { token: signToken(user), user: user.toJSON() };
+    }
+
+    // Resend OTP (max once per 60 seconds)
+    async resendOtp(userId) {
+        const user = await userRepository.findById(userId);
+        if (!user || !user.otpSentAt) {
+            throw makeError('Невірний запит', 400);
+        }
+
+        const secondsSinceLastSend = (Date.now() - user.otpSentAt.getTime()) / 1000;
+        if (secondsSinceLastSend < 60) {
+            const wait = Math.ceil(60 - secondsSinceLastSend);
+            throw makeError(`Зачекайте ${wait} сек. перед повторним надсиланням`, 429);
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otpCode    = await bcrypt.hash(otp, 6);
+        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        user.otpSentAt  = new Date();
+        await user.save();
+
+        await emailService.sendOtpEmail(user.email, otp);
+
+        const [localPart, domain] = user.email.split('@');
+        const masked = localPart[0] + '***@' + domain;
+        return { userId: user._id.toString(), sentTo: masked };
     }
 
     // Send forgot-password reset link

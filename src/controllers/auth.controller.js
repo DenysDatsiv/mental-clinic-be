@@ -28,6 +28,13 @@ class AuthController {
         } catch (err) { next(err); }
     }
 
+    async resendOtp(req, res, next) {
+        try {
+            const result = await authService.resendOtp(req.body.userId);
+            res.status(200).json(result);
+        } catch (err) { next(err); }
+    }
+
     async forgotPassword(req, res, next) {
         try {
             await authService.forgotPassword(req.body.identifier);

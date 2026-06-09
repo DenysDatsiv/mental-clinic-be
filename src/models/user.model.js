@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
         inviteTokenExpires:   { type: Date },
         otpCode:              { type: String },
         otpExpires:           { type: Date },
+        otpSentAt:            { type: Date },
         resetToken:           { type: String },
         resetTokenExpires:    { type: Date },
     },
@@ -34,6 +35,7 @@ userSchema.set('toJSON', {
         delete obj.password;
         delete obj.otpCode;
         delete obj.otpExpires;
+        delete obj.otpSentAt;
         delete obj.resetToken;
         delete obj.resetTokenExpires;
         delete obj.inviteToken;
