@@ -31,6 +31,7 @@ const corsOptions = {
 
 const app = express();
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // explicit preflight for PATCH/DELETE
 app.use(cookieParser());
 app.use(express.json());
 
