@@ -177,6 +177,69 @@ class AuthService {
         return { userId: user._id.toString(), sentTo: masked };
     }
 
+    // Request email or phone change — sends OTP to current email
+    async requestContactChange(userId, type, value) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw makeError('Не знайдено', 404);
+
+        const normalised = value.trim().toLowerCase();
+
+        // Uniqueness check
+        const taken = await userRepository.findByEmailOrPhone(normalised);
+        if (taken && taken._id.toString() !== userId) {
+            const label = type === 'email' ? 'Email' : 'Телефон';
+            throw makeError(`${label} вже використовується`, 409);
+        }
+
+        // 60-second cooldown
+        if (user.contactOtpSentAt) {
+            const elapsed = (Date.now() - user.contactOtpSentAt.getTime()) / 1000;
+            if (elapsed < 60) {
+                const wait = Math.ceil(60 - elapsed);
+                throw makeError(`Зачекайте ${wait} сек. перед повторним надсиланням`, 429);
+            }
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.contactOtpCode      = await bcrypt.hash(otp, 6);
+        user.contactOtpExpires   = new Date(Date.now() + 10 * 60 * 1000);
+        user.contactOtpSentAt    = new Date();
+        user.contactPendingType  = type;
+        user.contactPendingValue = normalised;
+        await user.save();
+
+        await emailService.sendOtpEmail(user.email, otp);
+
+        const [local, domain] = user.email.split('@');
+        return { sentTo: local[0] + '***@' + domain };
+    }
+
+    // Confirm contact change with OTP
+    async confirmContactChange(userId, otp) {
+        const user = await userRepository.findById(userId);
+        if (!user || !user.contactOtpCode || !user.contactOtpExpires) {
+            throw makeError('Невірний запит', 400);
+        }
+        if (user.contactOtpExpires < new Date()) {
+            throw makeError('Код протермінований. Надішліть новий.', 400);
+        }
+        const valid = await bcrypt.compare(otp, user.contactOtpCode);
+        if (!valid) throw makeError('Невірний код', 400);
+
+        const { contactPendingType: type, contactPendingValue: value } = user;
+        if (type === 'email') user.email = value;
+        else if (type === 'phone') user.phone = value;
+
+        user.contactOtpCode      = undefined;
+        user.contactOtpExpires   = undefined;
+        user.contactOtpSentAt    = undefined;
+        user.contactPendingType  = undefined;
+        user.contactPendingValue = undefined;
+        await user.save();
+
+        return user.toJSON();
+    }
+
     // Send forgot-password reset link
     async forgotPassword(identifier) {
         const user = await userRepository.findByEmailOrPhone(identifier);

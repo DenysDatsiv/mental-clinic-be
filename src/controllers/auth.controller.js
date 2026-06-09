@@ -35,6 +35,24 @@ class AuthController {
         } catch (err) { next(err); }
     }
 
+    async requestContactChange(req, res, next) {
+        try {
+            const result = await authService.requestContactChange(
+                req.user._id.toString(), req.body.type, req.body.value
+            );
+            res.status(200).json(result);
+        } catch (err) { next(err); }
+    }
+
+    async confirmContactChange(req, res, next) {
+        try {
+            const user = await authService.confirmContactChange(
+                req.user._id.toString(), req.body.otp
+            );
+            res.status(200).json({ user });
+        } catch (err) { next(err); }
+    }
+
     async forgotPassword(req, res, next) {
         try {
             await authService.forgotPassword(req.body.identifier);

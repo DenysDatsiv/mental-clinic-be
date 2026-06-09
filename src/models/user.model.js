@@ -17,6 +17,11 @@ const userSchema = new mongoose.Schema(
         otpSentAt:            { type: Date },
         resetToken:           { type: String },
         resetTokenExpires:    { type: Date },
+        contactOtpCode:       { type: String },
+        contactOtpExpires:    { type: Date },
+        contactOtpSentAt:     { type: Date },
+        contactPendingType:   { type: String },
+        contactPendingValue:  { type: String },
     },
     { timestamps: true }
 );
@@ -40,6 +45,11 @@ userSchema.set('toJSON', {
         delete obj.resetTokenExpires;
         delete obj.inviteToken;
         delete obj.inviteTokenExpires;
+        delete obj.contactOtpCode;
+        delete obj.contactOtpExpires;
+        delete obj.contactOtpSentAt;
+        delete obj.contactPendingType;
+        delete obj.contactPendingValue;
         return obj;
     },
 });
