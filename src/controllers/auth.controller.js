@@ -145,6 +145,20 @@ class AuthController {
         } catch (err) { next(err); }
     }
 
+    async updateUserStatus(req, res, next) {
+        try {
+            const user = await authService.updateUserStatus(req.params.id, req.body.status);
+            res.status(200).json(user);
+        } catch (err) { next(err); }
+    }
+
+    async deleteUser(req, res, next) {
+        try {
+            await authService.deleteUser(req.params.id, req.user._id.toString());
+            res.status(200).json({ message: 'Користувача видалено' });
+        } catch (err) { next(err); }
+    }
+
     async createUser(req, res, next) {
         try {
             const user = await authService.createUser(req.body);

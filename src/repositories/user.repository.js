@@ -12,6 +12,8 @@ class UserRepository {
         const val = identifier.toLowerCase().trim();
         return User.findOne({ $or: [{ email: val }, { phone: identifier.trim() }] });
     }
+
+    deleteById(id) { return User.findByIdAndDelete(id); }
 }
 
 module.exports = new UserRepository();

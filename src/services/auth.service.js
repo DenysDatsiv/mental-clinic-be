@@ -117,6 +117,9 @@ class AuthService {
         if (user.status === 'pending') {
             throw makeError('Спочатку прийміть запрошення через посилання у листі', 403);
         }
+        if (user.status === 'inactive') {
+            throw makeError('Акаунт деактивовано. Зверніться до адміністратора.', 403);
+        }
 
         if (user.twoFactorEnabled === false) {
             const token = signToken(user);
@@ -333,6 +336,25 @@ class AuthService {
         user.password = newPassword;
         await user.save();
         return user.toJSON();
+    }
+
+    async updateUserStatus(userId, status) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw makeError('Користувача не знайдено', 404);
+        user.status = status;
+        await user.save();
+        if (status === 'inactive') {
+            await Session.updateMany({ userId: user._id }, { revoked: true });
+        }
+        return user.toJSON();
+    }
+
+    async deleteUser(userId, requestingUserId) {
+        if (userId === requestingUserId) throw makeError('Не можна видалити власний акаунт', 400);
+        const user = await userRepository.findById(userId);
+        if (!user) throw makeError('Користувача не знайдено', 404);
+        await Session.deleteMany({ userId: user._id });
+        await userRepository.deleteById(userId);
     }
 
     async registerFirstAdmin({ name, email, password }) {
