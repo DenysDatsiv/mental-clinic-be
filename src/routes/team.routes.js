@@ -15,6 +15,7 @@ router.patch('/me/profile', authenticate, (req, res, next) => teamController.upd
 // Admin only
 router.post('/',      authenticate, requireAdmin, (req, res, next) => teamController.create(req, res, next));
 router.put('/:id',    authenticate, requireAdmin, (req, res, next) => teamController.update(req, res, next));
+router.patch('/:id',  authenticate, requireAdmin, (req, res, next) => teamController.update(req, res, next));
 router.delete('/:id', authenticate, requireAdmin, (req, res, next) => teamController.remove(req, res, next));
 
 module.exports = router;
