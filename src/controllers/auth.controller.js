@@ -14,7 +14,14 @@ class AuthController {
     async loginStep1(req, res, next) {
         try {
             const { identifier, password } = req.body;
-            const result = await authService.loginStep1(identifier, password);
+            const ua = req.headers['user-agent'];
+            const ip = req.ip;
+            const result = await authService.loginStep1(identifier, password, ua, ip);
+            if (result.token) {
+                // 2FA disabled — issue cookie immediately
+                res.cookie('token', result.token, COOKIE_OPTIONS);
+                return res.status(200).json({ user: result.user });
+            }
             res.status(200).json(result);
         } catch (err) { next(err); }
     }
@@ -22,7 +29,9 @@ class AuthController {
     async verifyOtp(req, res, next) {
         try {
             const { userId, otp } = req.body;
-            const { token, user } = await authService.verifyOtp(userId, otp);
+            const { token, user } = await authService.verifyOtp(
+                userId, otp, req.headers['user-agent'], req.ip
+            );
             res.cookie('token', token, COOKIE_OPTIONS);
             res.status(200).json({ user });
         } catch (err) { next(err); }
@@ -68,8 +77,38 @@ class AuthController {
     }
 
     logout(req, res) {
+        const token = req.cookies?.token;
         res.clearCookie('token', { ...COOKIE_OPTIONS, maxAge: 0 });
+        if (token) authService.revokeSessionByToken(token).catch(() => {});
         res.status(200).json({ message: 'Logged out' });
+    }
+
+    async getSessions(req, res, next) {
+        try {
+            const sessions = await authService.getSessions(req.user._id.toString());
+            res.status(200).json({ sessions, currentSessionId: req.sessionId });
+        } catch (err) { next(err); }
+    }
+
+    async revokeSession(req, res, next) {
+        try {
+            await authService.revokeSession(req.user._id.toString(), req.params.id);
+            res.status(200).json({ message: 'Сесію завершено' });
+        } catch (err) { next(err); }
+    }
+
+    async revokeAllSessions(req, res, next) {
+        try {
+            await authService.revokeAllSessions(req.user._id.toString(), req.tokenHash);
+            res.status(200).json({ message: 'Усі інші сесії завершено' });
+        } catch (err) { next(err); }
+    }
+
+    async toggle2FA(req, res, next) {
+        try {
+            const user = await authService.toggle2FA(req.user._id.toString(), req.body.enabled);
+            res.status(200).json({ user });
+        } catch (err) { next(err); }
     }
 
     async me(req, res, next) {

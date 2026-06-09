@@ -4,6 +4,7 @@ const jwt    = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
 const teamRepository = require('../repositories/team.repository');
 const emailService   = require('./email.service');
+const Session        = require('../models/session.model');
 const { randomBytes } = crypto;
 
 const makeError = (msg, code) => Object.assign(new Error(msg), { statusCode: code });
@@ -107,8 +108,8 @@ class AuthService {
         return user.toJSON();
     }
 
-    // Step 1: validate credentials, generate + email OTP
-    async loginStep1(identifier, password) {
+    // Step 1: validate credentials; if 2FA disabled → issue token directly
+    async loginStep1(identifier, password, userAgent, ip) {
         const user = await userRepository.findByEmailOrPhone(identifier);
         if (!user || !(await user.comparePassword(password))) {
             throw makeError('Невірний логін або пароль', 401);
@@ -117,23 +118,27 @@ class AuthService {
             throw makeError('Спочатку прийміть запрошення через посилання у листі', 403);
         }
 
+        if (user.twoFactorEnabled === false) {
+            const token = signToken(user);
+            await Session.create({ userId: user._id, tokenHash: Session.hashToken(token), userAgent, ip });
+            return { token, user: user.toJSON() };
+        }
+
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         user.otpCode    = await bcrypt.hash(otp, 6);
-        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+        user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
         user.otpSentAt  = new Date();
         await user.save();
 
         await emailService.sendOtpEmail(user.email, otp);
 
-        // Mask email for display: a***@domain.com
         const [localPart, domain] = user.email.split('@');
         const masked = localPart[0] + '***@' + domain;
-
         return { userId: user._id.toString(), sentTo: masked };
     }
 
-    // Step 2: verify OTP → issue JWT cookie
-    async verifyOtp(userId, otp) {
+    // Step 2: verify OTP → issue JWT + create session
+    async verifyOtp(userId, otp, userAgent, ip) {
         const user = await userRepository.findById(userId);
         if (!user || !user.otpCode || !user.otpExpires) {
             throw makeError('Невірний запит', 400);
@@ -148,7 +153,9 @@ class AuthService {
         user.otpExpires = undefined;
         await user.save();
 
-        return { token: signToken(user), user: user.toJSON() };
+        const token = signToken(user);
+        await Session.create({ userId: user._id, tokenHash: Session.hashToken(token), userAgent, ip });
+        return { token, user: user.toJSON() };
     }
 
     // Resend OTP (max once per 60 seconds)
@@ -175,6 +182,42 @@ class AuthService {
         const [localPart, domain] = user.email.split('@');
         const masked = localPart[0] + '***@' + domain;
         return { userId: user._id.toString(), sentTo: masked };
+    }
+
+    // Revoke single session by raw JWT token (used on logout)
+    async revokeSessionByToken(token) {
+        const hash = Session.hashToken(token);
+        await Session.updateOne({ tokenHash: hash }, { revoked: true });
+    }
+
+    // List active sessions for a user
+    async getSessions(userId) {
+        return Session.find({ userId, revoked: false }).sort({ lastSeen: -1 }).lean();
+    }
+
+    // Revoke a single session by session _id (must belong to user)
+    async revokeSession(userId, sessionId) {
+        const session = await Session.findOne({ _id: sessionId, userId });
+        if (!session) throw makeError('Сесія не знайдена', 404);
+        session.revoked = true;
+        await session.save();
+    }
+
+    // Revoke all sessions except the current one
+    async revokeAllSessions(userId, currentTokenHash) {
+        await Session.updateMany(
+            { userId, revoked: false, tokenHash: { $ne: currentTokenHash } },
+            { revoked: true }
+        );
+    }
+
+    // Toggle 2FA on/off
+    async toggle2FA(userId, enabled) {
+        const user = await userRepository.findById(userId);
+        if (!user) throw makeError('Не знайдено', 404);
+        user.twoFactorEnabled = enabled;
+        await user.save();
+        return user.toJSON();
     }
 
     // Request email or phone change — sends OTP to current email
@@ -209,7 +252,6 @@ class AuthService {
         await user.save();
 
         await emailService.sendOtpEmail(user.email, otp);
-
         const [local, domain] = user.email.split('@');
         return { sentTo: local[0] + '***@' + domain };
     }

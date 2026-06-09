@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
         otpSentAt:            { type: Date },
         resetToken:           { type: String },
         resetTokenExpires:    { type: Date },
+        twoFactorEnabled:     { type: Boolean, default: true },
         contactOtpCode:       { type: String },
         contactOtpExpires:    { type: Date },
         contactOtpSentAt:     { type: Date },
