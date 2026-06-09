@@ -1,4 +1,5 @@
 const { BetaAnalyticsDataClient } = require('@google-analytics/data');
+const Test = require('../models/test.model');
 
 const makeError = (msg, code) => Object.assign(new Error(msg), { statusCode: code });
 
@@ -140,11 +141,34 @@ class AnalyticsService {
             orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
             limit: 10,
         });
-        return (res.rows || []).map(row => ({
-            path:   row.dimensionValues[0].value,
-            title:  friendlyTitle(row.dimensionValues[0].value, row.dimensionValues[1].value),
-            views:  parseInt(row.metricValues[0].value),
-        }));
+
+        const rows = res.rows || [];
+
+        // Collect unique test IDs from /test/detail/:id paths
+        const TEST_DETAIL_RE = /^\/test\/detail\/([a-f\d]{24})$/i;
+        const testIds = [...new Set(
+            rows
+                .map(r => r.dimensionValues[0].value)
+                .map(p => TEST_DETAIL_RE.exec(p)?.[1])
+                .filter(Boolean)
+        )];
+
+        // Bulk-fetch test names in one query
+        const testMap = {};
+        if (testIds.length) {
+            const tests = await Test.find({ _id: { $in: testIds } }, 'name').lean();
+            tests.forEach(t => { testMap[t._id.toString()] = t.name; });
+        }
+
+        return rows.map(row => {
+            const path  = row.dimensionValues[0].value;
+            const gaTitle = row.dimensionValues[1].value;
+            const match = TEST_DETAIL_RE.exec(path);
+            const title = match && testMap[match[1]]
+                ? testMap[match[1]]
+                : friendlyTitle(path, gaTitle);
+            return { path, title, views: parseInt(row.metricValues[0].value) };
+        });
     }
 
     async getTrafficSources() {
