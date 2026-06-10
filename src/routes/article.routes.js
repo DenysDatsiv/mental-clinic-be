@@ -5,8 +5,9 @@ const { authenticate, requireAdmin } = require('../middleware/auth.middleware');
 const router = Router();
 
 // Public
-router.get('/',    (req, res, next) => articleController.getAll(req, res, next));
-router.get('/:id', (req, res, next) => articleController.getById(req, res, next));
+router.get('/',             (req, res, next) => articleController.getAll(req, res, next));
+router.get('/:id/related',  (req, res, next) => articleController.getRelated(req, res, next));
+router.get('/:id',          (req, res, next) => articleController.getById(req, res, next));
 
 // Admin only
 router.post('/',     authenticate, requireAdmin, (req, res, next) => articleController.create(req, res, next));

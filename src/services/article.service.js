@@ -20,13 +20,29 @@ class ArticleService {
     }
 
     getAll(query) {
-        return articleRepository.findAll(buildFilter(query));
+        const { page, limit = '10', ...filterQuery } = query;
+        const filter = buildFilter(filterQuery);
+        if (page) {
+            return articleRepository.findAll(filter, {
+                page:  parseInt(page,  10),
+                limit: parseInt(limit, 10),
+            });
+        }
+        return articleRepository.findAll(filter);
     }
 
     async getById(id) {
         const article = await articleRepository.findById(id);
         if (!article) throw notFound();
+        // Fire-and-forget: increment view counter
+        articleRepository.incrementViews(id).catch(() => {});
         return article;
+    }
+
+    async getRelated(id) {
+        const article = await articleRepository.findById(id);
+        if (!article) throw notFound();
+        return articleRepository.findRelated(id, article.categories);
     }
 
     async update(id, data) {

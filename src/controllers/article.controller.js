@@ -10,8 +10,8 @@ class ArticleController {
 
     async getAll(req, res, next) {
         try {
-            const articles = await articleService.getAll(req.query);
-            res.status(200).json(articles);
+            const result = await articleService.getAll(req.query);
+            res.status(200).json(result);
         } catch (err) { next(err); }
     }
 
@@ -19,6 +19,13 @@ class ArticleController {
         try {
             const article = await articleService.getById(req.params.id);
             res.status(200).json(article);
+        } catch (err) { next(err); }
+    }
+
+    async getRelated(req, res, next) {
+        try {
+            const related = await articleService.getRelated(req.params.id);
+            res.status(200).json(related);
         } catch (err) { next(err); }
     }
 
