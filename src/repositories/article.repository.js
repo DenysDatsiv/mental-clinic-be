@@ -1,6 +1,9 @@
 const Article = require('../models/article.model');
 
-const LIST_FIELDS = '_id title excerpt categories tags status coverImage author publishedAt createdAt views isFeatured readTime';
+const LIST_FIELDS = '_id title excerpt categories tags status coverImage author publishedAt createdAt views isFeatured readTime slug';
+
+// Detect MongoDB ObjectId (24 hex chars)
+const isObjectId = id => /^[a-f\d]{24}$/i.test(id);
 
 class ArticleRepository {
     create(data) {
@@ -23,6 +26,15 @@ class ArticleRepository {
         return q;
     }
 
+    /** Lookup by MongoDB _id OR slug (for public-facing routes) */
+    findByIdOrSlug(idOrSlug) {
+        const query = isObjectId(idOrSlug)
+            ? { _id: idOrSlug }
+            : { slug: idOrSlug };
+        return Article.findOne(query).populate('author', 'name');
+    }
+
+    /** Internal lookup by _id only (used by admin / related queries) */
     findById(id) {
         return Article.findById(id).populate('author', 'name');
     }

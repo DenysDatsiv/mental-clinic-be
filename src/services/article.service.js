@@ -31,18 +31,17 @@ class ArticleService {
         return articleRepository.findAll(filter);
     }
 
-    async getById(id) {
-        const article = await articleRepository.findById(id);
+    async getById(idOrSlug) {
+        const article = await articleRepository.findByIdOrSlug(idOrSlug);
         if (!article) throw notFound();
-        // Fire-and-forget: increment view counter
-        articleRepository.incrementViews(id).catch(() => {});
+        articleRepository.incrementViews(article._id).catch(() => {});
         return article;
     }
 
-    async getRelated(id) {
-        const article = await articleRepository.findById(id);
+    async getRelated(idOrSlug) {
+        const article = await articleRepository.findByIdOrSlug(idOrSlug);
         if (!article) throw notFound();
-        return articleRepository.findRelated(id, article.categories);
+        return articleRepository.findRelated(article._id, article.categories);
     }
 
     async update(id, data) {
