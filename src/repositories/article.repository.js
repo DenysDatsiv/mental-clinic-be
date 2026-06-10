@@ -31,12 +31,16 @@ class ArticleRepository {
         const query = isObjectId(idOrSlug)
             ? { _id: idOrSlug }
             : { slug: idOrSlug };
-        return Article.findOne(query).populate('author', 'name');
+        return Article.findOne(query)
+            .populate('author', 'name')
+            .populate('relatedTests', 'name description duration type');
     }
 
     /** Internal lookup by _id only (used by admin / related queries) */
     findById(id) {
-        return Article.findById(id).populate('author', 'name');
+        return Article.findById(id)
+            .populate('author', 'name')
+            .populate('relatedTests', 'name description duration type');
     }
 
     incrementViews(id) {
