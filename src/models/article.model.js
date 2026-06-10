@@ -35,6 +35,7 @@ const articleSchema = new mongoose.Schema(
         status:     { type: String, enum: ['draft', 'published'], default: 'draft' },
         coverImage: { type: String },
         author:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        authorName: { type: String },
         publishedAt:{ type: Date },
         slug:       { type: String, unique: true, sparse: true, index: true },
         views:      { type: Number, default: 0 },
