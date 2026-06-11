@@ -1,11 +1,29 @@
 const Review = require('../models/review.model');
 
 class ReviewController {
-    // Public: approved only, sorted by order
+    // Public: approved only, paginated
     async getPublic(req, res, next) {
         try {
-            const reviews = await Review.find({ status: 'approved' }).sort({ order: 1, createdAt: -1 });
-            res.json(reviews);
+            const page  = Math.max(1, parseInt(req.query.page)  || 1);
+            const limit = Math.min(50, parseInt(req.query.limit) || 9);
+            const skip  = (page - 1) * limit;
+
+            const [reviews, total, avgResult] = await Promise.all([
+                Review.find({ status: 'approved' }).sort({ order: 1, createdAt: -1 }).skip(skip).limit(limit),
+                Review.countDocuments({ status: 'approved' }),
+                Review.aggregate([
+                    { $match: { status: 'approved' } },
+                    { $group: { _id: null, avg: { $avg: '$rating' } } },
+                ]),
+            ]);
+
+            res.json({
+                data:      reviews,
+                total,
+                page,
+                hasMore:   skip + reviews.length < total,
+                avgRating: avgResult[0] ? Math.round(avgResult[0].avg * 10) / 10 : 5,
+            });
         } catch (e) { next(e); }
     }
 
