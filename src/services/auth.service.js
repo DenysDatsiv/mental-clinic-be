@@ -21,7 +21,7 @@ class AuthService {
         return userRepository.findAll();
     }
 
-    async inviteUser(email, role = 'user') {
+    async inviteUser(email, role = 'user', redirectUrl, deliveryEmail) {
         const existing = await userRepository.findByEmail(email);
         if (existing) throw makeError('Email вже використовується', 409);
 
@@ -38,8 +38,9 @@ class AuthService {
             inviteTokenExpires:  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         });
 
-        const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
-        await emailService.sendInviteEmail(email, inviteUrl, role);
+        const base = redirectUrl || process.env.FRONTEND_URL;
+        const inviteUrl = `${base}/accept-invite?token=${inviteToken}`;
+        await emailService.sendInviteEmail(deliveryEmail || email, inviteUrl, role);
     }
 
     async acceptInvite(token, { name, lastName, phone, password }) {

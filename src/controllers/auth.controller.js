@@ -126,7 +126,7 @@ class AuthController {
 
     async inviteUser(req, res, next) {
         try {
-            await authService.inviteUser(req.body.email, req.body.role);
+            await authService.inviteUser(req.body.email, req.body.role, req.body.redirectUrl, req.body.deliveryEmail);
             res.status(200).json({ message: 'Запрошення надіслано' });
         } catch (err) { next(err); }
     }

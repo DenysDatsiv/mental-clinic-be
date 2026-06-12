@@ -10,11 +10,11 @@ class ContractController {
 
   async update(req, res, next) {
     try {
-      const { content } = req.body;
+      const { content, visible } = req.body;
       if (typeof content !== 'string') {
         return res.status(400).json({ message: 'content is required' });
       }
-      const doc = await contractService.update(content);
+      const doc = await contractService.update(content, visible);
       res.json(doc);
     } catch (err) { next(err); }
   }
