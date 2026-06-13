@@ -5,7 +5,9 @@ const Session = require('../models/session.model');
 const makeError = (msg, code) => Object.assign(new Error(msg), { statusCode: code });
 
 const authenticate = async (req, res, next) => {
-    const token = req.cookies?.token;
+    const authHeader = req.headers.authorization;
+    const token = req.cookies?.token
+      ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null);
     if (!token) return next(makeError('Not authenticated', 401));
 
     try {

@@ -18,9 +18,9 @@ class AuthController {
             const ip = req.ip;
             const result = await authService.loginStep1(identifier, password, ua, ip);
             if (result.token) {
-                // 2FA disabled — issue cookie immediately
+                // 2FA disabled — issue cookie + return token for clients that can't use cookies (iOS Safari, incognito)
                 res.cookie('token', result.token, COOKIE_OPTIONS);
-                return res.status(200).json({ user: result.user });
+                return res.status(200).json({ user: result.user, token: result.token });
             }
             res.status(200).json(result);
         } catch (err) { next(err); }
@@ -33,7 +33,7 @@ class AuthController {
                 userId, otp, req.headers['user-agent'], req.ip
             );
             res.cookie('token', token, COOKIE_OPTIONS);
-            res.status(200).json({ user });
+            res.status(200).json({ user, token });
         } catch (err) { next(err); }
     }
 
