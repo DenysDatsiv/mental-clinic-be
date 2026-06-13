@@ -3,15 +3,18 @@ const sendTelegramMessage = async (text) => {
     const chatId = process.env.TELEGRAM_CHAT_ID;
 
     if (!token || !chatId) {
-        console.warn('[Support] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set');
-        return;
+        throw new Error('TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set');
     }
 
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res  = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
     });
+    const data = await res.json();
+    if (!data.ok) {
+        throw new Error(`Telegram error: ${data.description ?? JSON.stringify(data)}`);
+    }
 };
 
 class SupportController {

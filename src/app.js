@@ -45,6 +45,8 @@ app.use('/api/reviews',   reviewRoutes);
 app.use('/api/support',   supportRoutes);
 app.use('/api/contract',  contractRoutes);
 
+app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
+
 app.use(errorHandler);
 
 module.exports = app;

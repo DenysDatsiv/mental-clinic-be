@@ -5,6 +5,8 @@
   "main": "server.js.js",
   "scripts": {
     "start": "node server.js",
+    "monitor": "node scripts/monitor.js",
+    "monitor:setup": "node scripts/monitor.js --setup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
