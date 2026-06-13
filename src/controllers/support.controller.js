@@ -20,7 +20,7 @@ const sendTelegramMessage = async (text) => {
 class SupportController {
     async send(req, res, next) {
         try {
-            const { name, message, phone } = req.body;
+            const { name, message, email, phone } = req.body;
             if (!name?.trim() || !message?.trim()) {
                 return res.status(400).json({ message: 'Імʼя та повідомлення обовʼязкові' });
             }
@@ -30,6 +30,7 @@ class SupportController {
                 '',
                 `👤 <b>Імʼя:</b> ${name.trim()}`,
             ];
+            if (email?.trim()) lines.push(`✉️ <b>Email:</b> ${email.trim()}`);
             if (phone?.trim()) lines.push(`📞 <b>Телефон:</b> ${phone.trim()}`);
             lines.push('');
             lines.push(`📝 <b>Повідомлення:</b>`);
